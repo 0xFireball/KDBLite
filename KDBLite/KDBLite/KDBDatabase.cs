@@ -6,7 +6,7 @@ using System.IO;
 
 namespace KDBLite
 {
-    public class KDBDatabase : IDisposable
+    public class KDBDatabase
     {
         private Stream _targetStream;
         private BinaryWriter _targetWriter;
@@ -66,12 +66,6 @@ namespace KDBLite
             var encryptedData = PowerAES.Encrypt(databaseData.GetString(), EncryptionKey).GetBytes();
             _targetWriter.Write(encryptedData);
             _targetWriter.Flush();
-        }
-
-        public void Dispose()
-        {
-            _targetWriter.Close();
-            _targetReader.Close();
         }
 
         private MessagePackSerializer Serializer => SerializationContext.Default.GetSerializer<KDBDataStructure>();
