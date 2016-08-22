@@ -56,6 +56,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DatabaseSerializationSystem.cs" />
     <Compile Include="KDBDatabase.cs" />
     <Compile Include="KDBDataStructure.cs" />
     <Compile Include="KDBRow.cs" />

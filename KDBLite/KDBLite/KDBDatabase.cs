@@ -1,7 +1,7 @@
 ﻿using MsgPack.Serialization;
+using Newtonsoft.Json;
 using OmniBean.PowerCrypt4;
 using OmniBean.PowerCrypt4.Utilities;
-using System;
 using System.IO;
 
 namespace KDBLite
@@ -12,11 +12,15 @@ namespace KDBLite
         private BinaryWriter _targetWriter;
         private BinaryReader _targetReader;
         public KDBDataStructure Tables { get; private set; }
+
+        public DatabaseSerializationSystem SerializationSystem { get; }
         public string EncryptionKey { get; }
 
-        public KDBDatabase(Stream targetStream, string encryptionKey = "")
+        public KDBDatabase(Stream targetStream, string encryptionKey = "", DatabaseSerializationSystem serializationSystem = DatabaseSerializationSystem.MsgPack)
         {
             EncryptionKey = encryptionKey;
+            SerializationSystem = serializationSystem;
+
             _targetStream = targetStream;
             _targetWriter = new BinaryWriter(_targetStream);
             _targetReader = new BinaryReader(_targetStream);
@@ -48,7 +52,20 @@ namespace KDBLite
             var decryptedData = PowerAES.Decrypt(encryptedData.GetString(), EncryptionKey).GetBytes();
             using (var decryptedStream = new MemoryStream(decryptedData))
             {
-                Tables = Serializer.Unpack(decryptedStream) as KDBDataStructure;
+                switch (SerializationSystem)
+                {
+                    case DatabaseSerializationSystem.MsgPack:
+                        Tables = Serializer.Unpack(decryptedStream) as KDBDataStructure;
+                        break;
+
+                    case DatabaseSerializationSystem.Json:
+                        using (var decryptedStreamReader = new StreamReader(decryptedStream))
+                        {
+                            var jsonString = decryptedStreamReader.ReadToEnd();
+                            Tables = JsonConvert.DeserializeObject<KDBDataStructure>(jsonString);
+                        }
+                        break;
+                }
             }
         }
 
@@ -58,14 +75,29 @@ namespace KDBLite
         public void SaveDatabase()
         {
             EmptyTargetStream();
-            var intermediateStream = new MemoryStream();
-            Serializer.Pack(intermediateStream, Tables);
+            using (var intermediateStream = new MemoryStream())
+            {
+                switch (SerializationSystem)
+                {
+                    case DatabaseSerializationSystem.MsgPack:
+                        Serializer.Pack(intermediateStream, Tables);
+                        break;
 
-            //Encrypt stream
-            var databaseData = intermediateStream.ToArray();
-            var encryptedData = PowerAES.Encrypt(databaseData.GetString(), EncryptionKey).GetBytes();
-            _targetWriter.Write(encryptedData);
-            _targetWriter.Flush();
+                    case DatabaseSerializationSystem.Json:
+                        var serializedObj = JsonConvert.SerializeObject(Tables);
+                        using (var intermediateStreamWriter = new StreamWriter(intermediateStream))
+                        {
+                            intermediateStreamWriter.Write(serializedObj);
+                        }
+                        break;
+                }
+
+                //Encrypt stream
+                var databaseData = intermediateStream.ToArray();
+                var encryptedData = PowerAES.Encrypt(databaseData.GetString(), EncryptionKey).GetBytes();
+                _targetWriter.Write(encryptedData);
+                _targetWriter.Flush();
+            }
         }
 
         private MessagePackSerializer Serializer => SerializationContext.Default.GetSerializer<KDBDataStructure>();
