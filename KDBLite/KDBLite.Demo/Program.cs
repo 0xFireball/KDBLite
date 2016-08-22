@@ -12,7 +12,8 @@ namespace KDBLite.Demo
             using (var targetStream = File.Open("database.kdb", FileMode.Create, FileAccess.ReadWrite))
             {
                 var cryptoKey = "somesillypassword";
-                var sillyDatabaseToWrite = new KDBDatabase(targetStream, cryptoKey);
+                var serializationSystem = DatabaseSerializationSystem.Json;
+                var sillyDatabaseToWrite = new KDBDatabase(targetStream, cryptoKey, serializationSystem);
                 sillyDatabaseToWrite.FormatDatabase();
 
                 var sillyTableName = "sillytable";
@@ -24,7 +25,7 @@ namespace KDBLite.Demo
 
                 sillyDatabaseToWrite.SaveDatabase();
 
-                var sillyDatabaseToRead = new KDBDatabase(targetStream, cryptoKey);
+                var sillyDatabaseToRead = new KDBDatabase(targetStream, cryptoKey, serializationSystem);
                 sillyDatabaseToRead.LoadDatabase();
 
                 var sillyTableToRead = sillyDatabaseToRead.Tables.Where(table => table.Identifier == sillyTableName).ToArray()[0]; //Query with linq again
