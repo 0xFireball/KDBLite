@@ -1,5 +1,7 @@
 ﻿using Newtonsoft.Json;
 using OmniBean.PowerCrypt4.Utilities;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace KDBLite.Utilities
 {
@@ -22,6 +24,18 @@ namespace KDBLite.Utilities
         {
             kdbRow.Identifier = identifier;
             return kdbRow;
+        }
+
+        public static KDBTable CreateTableFromList<T>(this KDBTable table, IEnumerable<T> list)
+        {
+            table.Rows.Clear();
+            table.Rows.AddRange(list.Select(obj => CreateFromPackedObject(new KDBRow(), obj)));
+            return table;
+        }
+
+        public static List<T> CreateListFromTable<T>(this KDBTable table)
+        {
+            return table.Rows.Select(row => GetObjectFromPackedData<T>(row)).ToList();
         }
     }
 }

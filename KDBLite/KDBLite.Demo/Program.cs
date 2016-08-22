@@ -1,4 +1,5 @@
 ﻿using KDBLite.Utilities;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -29,6 +30,9 @@ namespace KDBLite.Demo
                 var sillyTableToRead = sillyDatabaseToRead.Tables.Where(table => table.Identifier == sillyTableName).ToArray()[0]; //Query with linq again
                 var sillyRowToRead = sillyTableToRead.Rows.Where(row => row.Identifier == sillyRowIdentifier).ToArray()[0];
                 var sillyObjectRead = sillyRowToRead.GetObjectFromPackedData<SillyObject>();
+                Debug.Assert(someSillyObject.Name == sillyObjectRead.Name);
+
+                
             }
         }
     }
